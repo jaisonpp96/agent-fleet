@@ -1,0 +1,76 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: agentfleet-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to new server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/agentfleet_deploy
+          chmod 600 ~/.ssh/agentfleet_deploy
+
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Update server repository
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i ~/.ssh/agentfleet_deploy \
+            -p "$DEPLOY_PORT" \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            'bash -s' <<'REMOTE'
+          set -euo pipefail
+
+          cd /home/ubuntu/app
+
+          echo "Updating AgentFleet repository..."
+
+          git fetch origin
+          git checkout main
+          git reset --hard origin/main
+
+          echo "Updating submodules..."
+
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+          echo "Deployment source update complete."
+
+          echo
+          echo "Current commit:"
+          git rev-parse --short HEAD
+
+          echo
+          echo "Current branch:"
+          git branch --show-current
+
+          echo
+          echo "Working tree:"
+          git status --short --branch
+          REMOTE
