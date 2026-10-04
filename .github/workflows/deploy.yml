@@ -1,4 +1,3 @@
-```yaml
 name: Deploy
 
 on:
@@ -13,7 +12,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy to new server
+    name: Test server SSH connection
     runs-on: ubuntu-latest
 
     steps:
@@ -42,5 +41,10 @@ jobs:
           echo "User: $DEPLOY_USER"
           echo "Port: $DEPLOY_PORT"
 
-          ssh -vvv -i "$HOME/.ssh/agentfleet_deploy" -p "$DEPLOY_PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$DEPLOY_USER@$DEPLOY_HOST" "echo 'SSH CONNECTION SUCCESSFUL'"
-```
+          ssh -vvv \
+            -i "$HOME/.ssh/agentfleet_deploy" \
+            -p "$DEPLOY_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "echo 'SSH CONNECTION SUCCESSFUL'"
