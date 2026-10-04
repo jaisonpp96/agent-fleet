@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: agentfleet-production
-  cancel-in-progress: false 
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -23,13 +23,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
 
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/agentfleet_deploy
-          chmod 600 ~/.ssh/agentfleet_deploy
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/agentfleet_deploy"
+          chmod 600 "$HOME/.ssh/agentfleet_deploy"
 
-      - name: Update server repository
+      - name: Test SSH connection
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -37,41 +37,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          ssh \
-            -i ~/.ssh/agentfleet_deploy \
-            -p "$DEPLOY_PORT" \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            "$DEPLOY_USER@$DEPLOY_HOST" \
-            'bash -s' <<'REMOTE'
-          set -euo pipefail
+          echo "Testing SSH connection..."
+          echo "Host: $DEPLOY_HOST"
+          echo "User: $DEPLOY_USER"
+          echo "Port: $DEPLOY_PORT"
 
-          cd /home/ubuntu/app
-
-          echo "Updating AgentFleet repository..."
-
-          git fetch origin
-          git checkout main
-          git reset --hard origin/main
-
-          echo "Updating submodules..."
-
-          git submodule sync --recursive
-          git submodule update --init --recursive 
-
-          echo "Deployment source update complete."
-
-          echo
-          echo "Current commit:"
-          git rev-parse --short HEAD
-
-          echo
-          echo "Current branch:"
-          git branch --show-current
-
-          echo
-          echo "Working tree:"
-          git status --short --branch
-          REMOTE
+          ssh -vvv -i "$HOME/.ssh/agentfleet_deploy" -p "$DEPLOY_PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$DEPLOY_USER@$DEPLOY_HOST" "echo 'SSH CONNECTION SUCCESSFUL'"
 ```
-
