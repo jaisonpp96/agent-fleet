@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: agentfleet-production
-  cancel-in-progress: false
+  cancel-in-progress: false 
 
 jobs:
   deploy:
@@ -57,7 +57,7 @@ jobs:
           echo "Updating submodules..."
 
           git submodule sync --recursive
-          git submodule update --init --recursive
+          git submodule update --init --recursive 
 
           echo "Deployment source update complete."
 
