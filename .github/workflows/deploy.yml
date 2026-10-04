@@ -1,3 +1,4 @@
+```yaml
 name: Deploy
 
 on:
@@ -19,7 +20,6 @@ jobs:
       - name: Configure SSH
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
 
@@ -28,9 +28,6 @@ jobs:
 
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/agentfleet_deploy
           chmod 600 ~/.ssh/agentfleet_deploy
-
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
 
       - name: Update server repository
         env:
@@ -43,6 +40,8 @@ jobs:
           ssh \
             -i ~/.ssh/agentfleet_deploy \
             -p "$DEPLOY_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
             "$DEPLOY_USER@$DEPLOY_HOST" \
             'bash -s' <<'REMOTE'
           set -euo pipefail
@@ -74,3 +73,5 @@ jobs:
           echo "Working tree:"
           git status --short --branch
           REMOTE
+```
+
